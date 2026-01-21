@@ -1,0 +1,34 @@
+{
+  "name": "Visa",
+  "type": "object",
+  "properties": {
+    "country": {
+      "type": "string",
+      "description": "Country name"
+    },
+    "image": {
+      "type": "string",
+      "description": "Visa image URL"
+    },
+    "adult_price": {
+      "type": "number",
+      "description": "B2C Price per adult"
+    },
+    "child_price": {
+      "type": "number",
+      "description": "B2C Price per child"
+    },
+    "b2b_adult_price": {
+      "type": "number",
+      "description": "B2B Price per adult"
+    },
+    "b2b_child_price": {
+      "type": "number",
+      "description": "B2B Price per child"
+    }
+  },
+  "required": [
+    "country",
+    "adult_price"
+  ]
+}

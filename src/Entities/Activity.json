@@ -1,0 +1,39 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Activity name"
+    },
+    "image": {
+      "type": "string",
+      "description": "Activity image URL"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the activity"
+    },
+    "adult_price": {
+      "type": "number",
+      "description": "B2C Adult price"
+    },
+    "child_price": {
+      "type": "number",
+      "description": "B2C Child price"
+    },
+    "b2b_adult_price": {
+      "type": "number",
+      "description": "B2B Adult price"
+    },
+    "b2b_child_price": {
+      "type": "number",
+      "description": "B2B Child price"
+    }
+  },
+  "required": [
+    "name",
+    "adult_price",
+    "child_price"
+  ]
+}

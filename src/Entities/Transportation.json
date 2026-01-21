@@ -1,0 +1,61 @@
+{
+  "name": "Transportation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Transport name (e.g. Private Car)"
+    },
+    "image": {
+      "type": "string",
+      "description": "Transport image URL"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "price_7_seater": {
+      "type": "number",
+      "description": "B2C Price for 7 Seater"
+    },
+    "price_14_seater": {
+      "type": "number",
+      "description": "B2C Price for 14 Seater"
+    },
+    "price_22_seater": {
+      "type": "number",
+      "description": "B2C Price for 22 Seater"
+    },
+    "price_35_seater": {
+      "type": "number",
+      "description": "B2C Price for 35 Seater"
+    },
+    "price_50_seater": {
+      "type": "number",
+      "description": "B2C Price for 50 Seater"
+    },
+    "b2b_price_7_seater": {
+      "type": "number",
+      "description": "B2B Price for 7 Seater"
+    },
+    "b2b_price_14_seater": {
+      "type": "number",
+      "description": "B2B Price for 14 Seater"
+    },
+    "b2b_price_22_seater": {
+      "type": "number",
+      "description": "B2B Price for 22 Seater"
+    },
+    "b2b_price_35_seater": {
+      "type": "number",
+      "description": "B2B Price for 35 Seater"
+    },
+    "b2b_price_50_seater": {
+      "type": "number",
+      "description": "B2B Price for 50 Seater"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

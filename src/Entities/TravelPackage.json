@@ -1,0 +1,119 @@
+{
+  "name": "TravelPackage",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Traveler name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Destination"
+    },
+    "arrival_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Arrival date"
+    },
+    "departure_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Departure date"
+    },
+    "adults": {
+      "type": "number",
+      "description": "Number of adults"
+    },
+    "children": {
+      "type": "number",
+      "description": "Number of children"
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "Dubai",
+        "Surat",
+        "UP"
+      ],
+      "default": "Dubai",
+      "description": "Branch office"
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Selected services"
+    },
+    "selected_hotels": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Selected hotels with dates"
+    },
+    "selected_activities": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Selected activities with dates"
+    },
+    "selected_transport": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Selected transportation with dates"
+    },
+    "selected_visas": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Selected visas"
+    },
+    "hotel_total": {
+      "type": "number",
+      "description": "Total hotel cost"
+    },
+    "activities_total": {
+      "type": "number",
+      "description": "Total activities cost"
+    },
+    "transport_total": {
+      "type": "number",
+      "description": "Total transport cost"
+    },
+    "visa_total": {
+      "type": "number",
+      "description": "Total visa cost"
+    },
+    "grand_total": {
+      "type": "number",
+      "description": "Grand total"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "confirmed",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED",
+      "description": "Currency code (AED, INR)"
+    }
+  },
+  "required": [
+    "name",
+    "destination"
+  ]
+}

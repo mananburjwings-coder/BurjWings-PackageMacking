@@ -1,0 +1,83 @@
+{
+  "name": "TravelBooking",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Traveler's full name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Travel destination"
+    },
+    "arrival_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Arrival date"
+    },
+    "departure_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Departure date"
+    },
+    "adults": {
+      "type": "number",
+      "description": "Number of adults"
+    },
+    "children": {
+      "type": "number",
+      "description": "Number of children"
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Selected travel services"
+    },
+    "selected_hotel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "check_in": {
+          "type": "string",
+          "format": "date"
+        },
+        "check_out": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "description": "Selected hotel details"
+    },
+    "selected_activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Selected activities"
+    }
+  },
+  "required": [
+    "name",
+    "phone",
+    "destination"
+  ]
+}

@@ -1,0 +1,43 @@
+
+{
+  "name": "Hotel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Hotel name"
+    },
+    "image": {
+      "type": "string",
+      "description": "Hotel image URL"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Star rating 1-5"
+    },
+    "location": {
+      "type": "string",
+      "description": "Hotel location"
+    },
+    "price_per_night": {
+      "type": "number",
+      "description": "B2C Price per night"
+    },
+    "b2b_price_per_night": {
+      "type": "number",
+      "description": "B2B Price per night"
+    },
+    "extra_bed_price": {
+      "type": "number",
+      "description": "B2C Extra bed price per night"
+    },
+    "b2b_extra_bed_price": {
+      "type": "number",
+      "description": "B2B Extra bed price per night"
+    }
+  },
+  "required": [
+    "name",
+    "price_per_night"
+  ]
+}
