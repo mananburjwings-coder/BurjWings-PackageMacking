@@ -351,7 +351,7 @@ export default function TravelBooking() {
       check_out: formData.departure_date || "",
     });
     setExtraBeds(0);
-    setRooms(0);
+    setRooms(1);
     setShowHotelModal(true);
   };
 
@@ -542,8 +542,11 @@ export default function TravelBooking() {
         ? "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/689f3e961bc8dd845cdffca0/e1b4644a8_WhatsApp_Image_2025-09-24_at_121734_PM-removebg-preview.png"
         : "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/689f3e961bc8dd845cdffca0/fa2fc3600_WhatsAppImage2025-10-25at44624PM.jpg";
 
-      // Professional Cover Page with elegant design
-      // Gradient background - soft blue to white
+      // ======================
+      // COVER PAGE (FIXED)
+      // ======================
+
+      // Background gradient
       for (let i = 0; i < 100; i++) {
         const ratio = i / 100;
         pdf.setFillColor(240 + ratio * 15, 245 + ratio * 10, 250 + ratio * 5);
@@ -556,141 +559,120 @@ export default function TravelBooking() {
         );
       }
 
-      // Top professional header bar
+      // Header bar
       pdf.setFillColor(30, 58, 138);
       pdf.rect(0, 0, pageWidth, 40, "F");
 
-      // Gold accent line
+      // Gold accent
       pdf.setFillColor(217, 119, 6);
       pdf.rect(0, 40, pageWidth, 4, "F");
 
-      // Company logo centered with white background
+      // Logo card
       try {
         const logoImg = await loadImage(logoUrl);
-        // White card for logo
         pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect((pageWidth - 80) / 2, 50, 80, 55, 4, 4, "F");
+        pdf.roundedRect((pageWidth - 70) / 2, 52, 70, 50, 4, 4, "F");
         pdf.setDrawColor(229, 231, 235);
         pdf.setLineWidth(1);
-        pdf.roundedRect((pageWidth - 80) / 2, 50, 80, 55, 4, 4, "S");
-        pdf.addImage(logoImg, "PNG", (pageWidth - 70) / 2, 55, 70, 45);
+        pdf.roundedRect((pageWidth - 70) / 2, 52, 70, 50, 4, 4, "S");
+        pdf.addImage(logoImg, "PNG", (pageWidth - 60) / 2, 58, 60, 38);
       } catch (e) {
         console.error("Logo load failed", e);
       }
 
       // Company name
-      pdf.setTextColor(30, 58, 138);
-      pdf.setFontSize(28);
+      // Company name (BLACK)
+      pdf.setTextColor(0, 0, 0); // Black
+      pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
-      pdf.text(companyName.toUpperCase(), pageWidth / 2, 125, {
+      pdf.text(companyName.toUpperCase(), pageWidth / 2, 115, {
         align: "center",
       });
 
-      // Subtitle line
-      pdf.setDrawColor(217, 119, 6);
-      pdf.setLineWidth(2);
-      pdf.line(pageWidth / 2 - 40, 132, pageWidth / 2 + 40, 132);
-
-      pdf.setTextColor(75, 85, 99);
-      pdf.setFontSize(14);
-      pdf.setFont("helvetica", "normal");
-      pdf.text("PREMIUM TRAVEL PACKAGE", pageWidth / 2, 143, {
+      // Premium badge
+      pdf.setFillColor(14, 165, 233);
+      pdf.roundedRect(margin + 30, 125, contentWidth - 60, 10, 4, 4, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("PREMIUM TRAVEL PACKAGE", pageWidth / 2, 132, {
         align: "center",
       });
 
-      // Travel dates box
+      // Dates box
       if (formData.arrival_date && formData.departure_date) {
         pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect(margin + 15, 155, contentWidth - 30, 24, 6, 6, "F");
+        pdf.roundedRect(margin + 30, 142, contentWidth - 60, 14, 4, 4, "F");
         pdf.setDrawColor(203, 213, 225);
-        pdf.setLineWidth(1);
-        pdf.roundedRect(margin + 15, 155, contentWidth - 30, 24, 6, 6, "S");
+        pdf.roundedRect(margin + 30, 142, contentWidth - 60, 14, 4, 4, "S");
 
-        pdf.setTextColor(71, 85, 105);
-        pdf.setFontSize(14);
+        pdf.setTextColor(30, 58, 138);
+        pdf.setFontSize(10);
         pdf.setFont("helvetica", "bold");
         pdf.text(
-          `${format(new Date(formData.arrival_date), "MMM d, yyyy")} - ${format(new Date(formData.departure_date), "MMM d, yyyy")}`,
+          `${format(new Date(formData.arrival_date), "MMM d, yyyy")} - ${format(
+            new Date(formData.departure_date),
+            "MMM d, yyyy",
+          )}`,
           pageWidth / 2,
-          170,
+          151,
           { align: "center" },
         );
       }
 
-      // Client information card
+      // Prepared for
       if (formData.name) {
         pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect(margin + 20, 190, contentWidth - 40, 50, 8, 8, "F");
+        pdf.roundedRect(margin + 25, 165, contentWidth - 50, 22, 5, 5, "F");
         pdf.setDrawColor(203, 213, 225);
-        pdf.setLineWidth(1);
-        pdf.roundedRect(margin + 20, 190, contentWidth - 40, 50, 8, 8, "S");
+        pdf.roundedRect(margin + 25, 165, contentWidth - 50, 22, 5, 5, "S");
 
-        // Left accent bar
-        pdf.setFillColor(30, 58, 138);
-        pdf.rect(margin + 20, 190, 5, 50, "F");
-
-        pdf.setTextColor(107, 114, 128);
-        pdf.setFontSize(11);
+        pdf.setTextColor(100, 116, 139);
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
-        pdf.text("PREPARED FOR", pageWidth / 2, 208, { align: "center" });
+        pdf.text("PREPARED FOR", pageWidth / 2, 173, { align: "center" });
 
         pdf.setTextColor(30, 58, 138);
-        pdf.setFontSize(22);
+        pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
-        pdf.text(formData.name.toUpperCase(), pageWidth / 2, 228, {
+        pdf.text(formData.name.toUpperCase(), pageWidth / 2, 183, {
           align: "center",
         });
       }
 
-      // Destination section
+      // Destination
+      // Destination
       if (formData.destination) {
-        pdf.setTextColor(107, 114, 128);
-        pdf.setFontSize(13);
+        pdf.setTextColor(0, 0, 0); // BLACK
+        pdf.setFontSize(12);
         pdf.setFont("helvetica", "bold");
-        pdf.text("TRAVEL DESTINATION", pageWidth / 2, 252, { align: "center" });
+        pdf.text("DESTINATION", pageWidth / 2, 205, { align: "center" });
 
-        pdf.setTextColor(30, 58, 138);
-        pdf.setFontSize(28);
+        pdf.setTextColor(0, 0, 0); // BLACK
+        pdf.setFontSize(18);
         pdf.setFont("helvetica", "bold");
-        pdf.text(formData.destination.toUpperCase(), pageWidth / 2, 268, {
+        pdf.text(formData.destination.toUpperCase(), pageWidth / 2, 217, {
           align: "center",
         });
       }
 
-      // Price card - professional design
+      // Price per person (bottom fixed)
+      const grandTotal = calculateGrandTotal();
       const totalPersons =
         (formData.adults || 0) + (formData.children || 0) || 1;
-      const perPersonPrice = calculateGrandTotal() / totalPersons;
-      const grandTotal = calculateGrandTotal();
+      const perPersonPrice = grandTotal / totalPersons;
 
-      pdf.setFillColor(217, 119, 6);
-      pdf.roundedRect(margin + 20, 278, contentWidth - 40, 42, 8, 8, "F");
-
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(11);
-      pdf.setFont("helvetica", "normal");
-      pdf.text("PACKAGE PRICE PER PERSON", pageWidth / 2, 294, {
-        align: "center",
-      });
-
-      pdf.setFontSize(26);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(formatPricePDF(perPersonPrice), pageWidth / 2, 312, {
-        align: "center",
-      });
-
-      // Total package price
-      pdf.setFillColor(30, 58, 138);
-      pdf.roundedRect(margin + 20, 326, contentWidth - 40, 38, 8, 8, "F");
+      pdf.setFillColor(22, 163, 74);
+      pdf.roundedRect(margin + 20, 235, contentWidth - 40, 22, 6, 6, "F");
 
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(11);
-      pdf.setFont("helvetica", "normal");
-      pdf.text("TOTAL PACKAGE PRICE", pageWidth / 2, 340, { align: "center" });
-
-      pdf.setFontSize(24);
+      pdf.setFontSize(10);
       pdf.setFont("helvetica", "bold");
-      pdf.text(formatPricePDF(grandTotal), pageWidth / 2, 356, {
+      pdf.text("PRICE PER PERSON", pageWidth / 2, 243, { align: "center" });
+
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(formatPricePDF(perPersonPrice), pageWidth / 2, 253, {
         align: "center",
       });
 
@@ -1161,7 +1143,7 @@ export default function TravelBooking() {
       pdf.text("TERMS & CONDITIONS", pageWidth / 2, yPosition + 15, {
         align: "center",
       });
-      yPosition += 35;
+      yPosition += 30;
 
       const terms = [
         {
@@ -1243,28 +1225,26 @@ export default function TravelBooking() {
       ];
 
       terms.forEach((section) => {
-        const titleHeight = 8;
-        const contentHeight = section.content.length * 6 + 10;
-        checkAddPage(titleHeight + contentHeight);
-
-        pdf.setFontSize(11);
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(30, 64, 175);
         pdf.text(section.title, margin, yPosition);
-        yPosition += 7;
+        yPosition += 5;
 
-        pdf.setFontSize(9);
+        pdf.setFontSize(7.5);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(71, 85, 105);
+
         section.content.forEach((line) => {
           const wrappedLines = pdf.splitTextToSize(line, contentWidth - 5);
           wrappedLines.forEach((wLine) => {
-            checkAddPage(5);
+            checkAddPage(4);
             pdf.text(wLine, margin + 3, yPosition);
-            yPosition += 5;
+            yPosition += 4;
           });
         });
-        yPosition += 5;
+
+        yPosition += 3;
       });
 
       yPosition += 10;
@@ -1668,11 +1648,11 @@ export default function TravelBooking() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative overflow-visible">
                         <Label className="text-slate-700 font-medium">
                           Arrival
                         </Label>
-                        <Popover>
+                        <Popover modal={false}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -1687,7 +1667,13 @@ export default function TravelBooking() {
                                 : "Select"}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
+                          <PopoverContent
+                            
+                            side="bottom"
+                            align="start"
+                            sideOffset={8}
+                            className="w-auto p-0 z-[99999]"
+                          >
                             <Calendar
                               mode="single"
                               selected={
@@ -1695,9 +1681,36 @@ export default function TravelBooking() {
                                   ? new Date(formData.arrival_date)
                                   : undefined
                               }
-                              onSelect={(d) =>
-                                setFormData({ ...formData, arrival_date: d })
-                              }
+                              onSelect={(d) => {
+                                const arrivalISO = d ? d.toISOString() : "";
+
+                                setFormData((prev) => {
+                                  let departureISO = prev.departure_date;
+
+                                  if (arrivalISO) {
+                                    const arrivalDate = new Date(arrivalISO);
+
+                                    // if departure empty OR departure < arrival => set departure = arrival + 1 day
+                                    if (
+                                      !departureISO ||
+                                      new Date(departureISO) < arrivalDate
+                                    ) {
+                                      departureISO = addDays(
+                                        arrivalDate,
+                                        1,
+                                      ).toISOString();
+                                    }
+                                  } else {
+                                    departureISO = "";
+                                  }
+
+                                  return {
+                                    ...prev,
+                                    arrival_date: arrivalISO,
+                                    departure_date: departureISO,
+                                  };
+                                });
+                              }}
                               disabled={(date) =>
                                 date < new Date(new Date().setHours(0, 0, 0, 0))
                               }
@@ -1705,11 +1718,11 @@ export default function TravelBooking() {
                           </PopoverContent>
                         </Popover>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative overflow-visible">
                         <Label className="text-slate-700 font-medium">
                           Departure
                         </Label>
-                        <Popover>
+                        <Popover modal={false}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -1724,7 +1737,13 @@ export default function TravelBooking() {
                                 : "Select"}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
+                          <PopoverContent
+                            
+                            side="bottom"
+                            align="start"
+                            sideOffset={8}
+                            className="w-auto p-0 z-[99999]"
+                          >
                             <Calendar
                               mode="single"
                               selected={
@@ -1733,11 +1752,22 @@ export default function TravelBooking() {
                                   : undefined
                               }
                               onSelect={(d) =>
-                                setFormData({ ...formData, departure_date: d })
+                                setFormData({
+                                  ...formData,
+                                  departure_date: d ? d.toISOString() : "",
+                                })
                               }
-                              disabled={(date) =>
-                                date < new Date(new Date().setHours(0, 0, 0, 0))
-                              }
+                              disabled={(date) => {
+                                const today = new Date(
+                                  new Date().setHours(0, 0, 0, 0),
+                                );
+                                if (date < today) return true;
+
+                                if (formData.arrival_date) {
+                                  return date < new Date(formData.arrival_date);
+                                }
+                                return false;
+                              }}
                             />
                           </PopoverContent>
                         </Popover>
@@ -2600,7 +2630,7 @@ export default function TravelBooking() {
               >
                 Previous
               </Button>
-              {currentStep < 6 ? (
+              {currentStep < 7 ? (
                 <Button
                   onClick={() => setCurrentStep(currentStep + 1)}
                   className="bg-blue-600 hover:bg-blue-700"
@@ -2745,6 +2775,7 @@ export default function TravelBooking() {
                   <div>
                     <Label>Check-in</Label>
                     <Popover
+                      modal={false}
                       open={hotelCheckInOpen}
                       onOpenChange={setHotelCheckInOpen}
                     >
@@ -2756,7 +2787,13 @@ export default function TravelBooking() {
                             : "Select"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent
+                       
+                        side="bottom"
+                        align="start"
+                        sideOffset={8}
+                        className="w-auto p-0 z-[99999]"
+                      >
                         <Calendar
                           mode="single"
                           selected={
@@ -2765,7 +2802,10 @@ export default function TravelBooking() {
                               : undefined
                           }
                           onSelect={(d) => {
-                            setHotelDates({ ...hotelDates, check_in: d });
+                            setHotelDates({
+                              ...hotelDates,
+                              check_in: d ? d.toISOString() : "",
+                            });
                             setHotelCheckInOpen(false);
                           }}
                           disabled={(date) =>
@@ -2781,6 +2821,7 @@ export default function TravelBooking() {
                   <div>
                     <Label>Check-out</Label>
                     <Popover
+                      modal={false}
                       open={hotelCheckOutOpen}
                       onOpenChange={setHotelCheckOutOpen}
                     >
@@ -2792,7 +2833,13 @@ export default function TravelBooking() {
                             : "Select"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent
+                        
+                        side="bottom"
+                        align="start"
+                        sideOffset={8}
+                        className="w-auto p-0 z-[99999]"
+                      >
                         <Calendar
                           mode="single"
                           selected={
@@ -2801,15 +2848,30 @@ export default function TravelBooking() {
                               : undefined
                           }
                           onSelect={(d) => {
-                            setHotelDates({ ...hotelDates, check_out: d });
+                            setHotelDates({
+                              ...hotelDates,
+                              check_out: d ? d.toISOString() : "",
+                            });
                             setHotelCheckOutOpen(false);
                           }}
-                          disabled={(date) =>
-                            !formData.arrival_date ||
-                            !formData.departure_date ||
-                            date < new Date(formData.arrival_date) ||
-                            date > new Date(formData.departure_date)
-                          }
+                          disabled={(date) => {
+                            if (
+                              !formData.arrival_date ||
+                              !formData.departure_date
+                            )
+                              return true;
+
+                            const arrival = new Date(formData.arrival_date);
+                            const departure = new Date(formData.departure_date);
+
+                            // must be >= check-in + 1 day
+                            const checkIn = hotelDates.check_in
+                              ? new Date(hotelDates.check_in)
+                              : arrival;
+                            const minCheckout = addDays(checkIn, 1);
+
+                            return date < minCheckout || date > departure;
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
@@ -2822,7 +2884,7 @@ export default function TravelBooking() {
                       type="number"
                       min="0"
                       value={rooms}
-                      onChange={(e) => setRooms(parseInt(e.target.value) || 0)}
+                      onChange={(e) => setRooms(parseInt(e.target.value) || 1)}
                     />
                   </div>
                   <div>
@@ -2869,6 +2931,7 @@ export default function TravelBooking() {
                 <div>
                   <Label>Date</Label>
                   <Popover
+                    modal={false}
                     open={activityDateOpen}
                     onOpenChange={setActivityDateOpen}
                   >
@@ -2883,14 +2946,20 @@ export default function TravelBooking() {
                           : "Select Date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent
+                      
+                      side="bottom"
+                      align="start"
+                      sideOffset={8}
+                      className="w-auto p-0 z-[99999]"
+                    >
                       <Calendar
                         mode="single"
                         selected={
                           activityDate ? new Date(activityDate) : undefined
                         }
                         onSelect={(d) => {
-                          setActivityDate(d);
+                          setActivityDate(d ? d.toISOString() : "");
                           setActivityDateOpen(false);
                         }}
                         disabled={(date) => {
@@ -3095,6 +3164,7 @@ export default function TravelBooking() {
                   <Label>Select Dates</Label>
                   <div className="flex gap-2 mb-2">
                     <Popover
+                      modal={false}
                       open={transportDateOpen}
                       onOpenChange={setTransportDateOpen}
                     >
@@ -3103,11 +3173,17 @@ export default function TravelBooking() {
                           <CalendarIcon className="w-4 h-4 mr-2" /> Add Date
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent
+                        
+                        side="bottom"
+                        align="start"
+                        sideOffset={8}
+                        className="w-auto p-0 z-[99999]"
+                      >
                         <Calendar
                           mode="single"
                           onSelect={(d) => {
-                            addTransportDate(d);
+                            addTransportDate(d ? d.toISOString() : "");
                             setTransportDateOpen(false);
                           }}
                           disabled={(date) =>

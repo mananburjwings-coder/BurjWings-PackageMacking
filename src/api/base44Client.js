@@ -26,7 +26,17 @@ const INITIAL_DATA = {
             b2b_extra_bed_price: 250
         }
     ],
-
+db_sic_transport: [
+        {
+            id: "sic1",
+            place_name: "Dubai City Tour",
+            description: "Guided tour of major landmarks.",
+            adult_price: 150,
+            child_price: 100,
+            b2b_adult_price: 120,
+            b2b_child_price: 80
+        }
+    ],
     db_activities: [
         {
             id: "a1",
@@ -120,171 +130,188 @@ const setStorageData = (key, data) => {
 
 // ================= BASE44 CLIENT =================
 export const base44 = {
-    entities: {
+  entities: {
+    SICTransport: {
+      list: async () => getStorageData("db_sic_transport"),
 
-        TravelPackage: {
-            list: async () =>
-                getStorageData("db_packages").sort(
-                    (a, b) => new Date(b.created_date) - new Date(a.created_date)
-                ),
+      create: async (data) => {
+        const items = getStorageData("db_sic_transport");
+        const newItem = { ...data, id: Date.now().toString() };
+        items.push(newItem);
+        setStorageData("db_sic_transport", items);
+        return newItem;
+      },
 
-            filter: async ({ id }) =>
-                getStorageData("db_packages").filter((p) => p.id === id),
+      update: async (id, data) => {
+        const items = getStorageData("db_sic_transport").map((item) =>
+          item.id === id ? { ...item, ...data } : item,
+        );
+        setStorageData("db_sic_transport", items);
+        return data;
+      },
 
-            create: async (data) => {
-                const items = getStorageData("db_packages");
-                const newItem = {
-                    ...data,
-                    id: Math.random().toString(36).slice(2, 9),
-                    created_date: new Date().toISOString()
-                };
-                items.push(newItem);
-                setStorageData("db_packages", items);
-                return newItem;
-            },
+      delete: async (id) => {
+        const items = getStorageData("db_sic_transport").filter(
+          (i) => i.id !== id,
+        );
+        setStorageData("db_sic_transport", items);
+      },
+    },
+    TravelPackage: {
+      list: async () =>
+        getStorageData("db_packages").sort(
+          (a, b) => new Date(b.created_date) - new Date(a.created_date),
+        ),
 
-            delete: async (id) => {
-                const items = getStorageData("db_packages").filter(
-                    (p) => p.id !== id
-                );
-                setStorageData("db_packages", items);
-            }
-        },
+      filter: async ({ id }) =>
+        getStorageData("db_packages").filter((p) => p.id === id),
 
-        Hotel: {
-            list: async () => getStorageData("db_hotels"),
+      create: async (data) => {
+        const items = getStorageData("db_packages");
+        const newItem = {
+          ...data,
+          id: Math.random().toString(36).slice(2, 9),
+          created_date: new Date().toISOString(),
+        };
+        items.push(newItem);
+        setStorageData("db_packages", items);
+        return newItem;
+      },
 
-            create: async (data) => {
-                const items = getStorageData("db_hotels");
-                const newItem = { ...data, id: Date.now().toString() };
-                items.push(newItem);
-                setStorageData("db_hotels", items);
-                return newItem;
-            },
-
-            update: async (id, data) => {
-                const items = getStorageData("db_hotels").map((item) =>
-                    item.id === id ? { ...item, ...data } : item
-                );
-                setStorageData("db_hotels", items);
-                return data;
-            },
-
-            delete: async (id) => {
-                const items = getStorageData("db_hotels").filter(
-                    (i) => i.id !== id
-                );
-                setStorageData("db_hotels", items);
-            }
-        },
-
-        Activity: {
-            list: async () => getStorageData("db_activities"),
-
-            create: async (data) => {
-                const items = getStorageData("db_activities");
-                const newItem = { ...data, id: Date.now().toString() };
-                items.push(newItem);
-                setStorageData("db_activities", items);
-                return newItem;
-            },
-
-            update: async (id, data) => {
-                const items = getStorageData("db_activities").map((item) =>
-                    item.id === id ? { ...item, ...data } : item
-                );
-                setStorageData("db_activities", items);
-                return data;
-            },
-
-            delete: async (id) => {
-                const items = getStorageData("db_activities").filter(
-                    (i) => i.id !== id
-                );
-                setStorageData("db_activities", items);
-            }
-        },
-
-        Transportation: {
-            list: async () => getStorageData("db_transport"),
-
-            create: async (data) => {
-                const items = getStorageData("db_transport");
-                const newItem = { ...data, id: Date.now().toString() };
-                items.push(newItem);
-                setStorageData("db_transport", items);
-                return newItem;
-            },
-
-            update: async (id, data) => {
-                const items = getStorageData("db_transport").map((item) =>
-                    item.id === id ? { ...item, ...data } : item
-                );
-                setStorageData("db_transport", items);
-                return data;
-            },
-
-            delete: async (id) => {
-                const items = getStorageData("db_transport").filter(
-                    (i) => i.id !== id
-                );
-                setStorageData("db_transport", items);
-            }
-        },
-
-        Visa: {
-            list: async () => getStorageData("db_visas"),
-
-            create: async (data) => {
-                const items = getStorageData("db_visas");
-                const newItem = { ...data, id: Date.now().toString() };
-                items.push(newItem);
-                setStorageData("db_visas", items);
-                return newItem;
-            },
-
-            update: async (id, data) => {
-                const items = getStorageData("db_visas").map((item) =>
-                    item.id === id ? { ...item, ...data } : item
-                );
-                setStorageData("db_visas", items);
-                return data;
-            },
-
-            delete: async (id) => {
-                const items = getStorageData("db_visas").filter(
-                    (i) => i.id !== id
-                );
-                setStorageData("db_visas", items);
-            }
-        }
+      delete: async (id) => {
+        const items = getStorageData("db_packages").filter((p) => p.id !== id);
+        setStorageData("db_packages", items);
+      },
     },
 
-    // ================= CLOUDINARY INTEGRATION =================
-    integrations: {
-        Core: {
-            UploadFile: async ({ file }) => {
-                const CLOUD_NAME = "dpqecvo3y";
-                const UPLOAD_PRESET = "Package-making";
+    Hotel: {
+      list: async () => getStorageData("db_hotels"),
 
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("upload_preset", UPLOAD_PRESET);
+      create: async (data) => {
+        const items = getStorageData("db_hotels");
+        const newItem = { ...data, id: Date.now().toString() };
+        items.push(newItem);
+        setStorageData("db_hotels", items);
+        return newItem;
+      },
 
-                const res = await fetch(
-                    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
+      update: async (id, data) => {
+        const items = getStorageData("db_hotels").map((item) =>
+          item.id === id ? { ...item, ...data } : item,
+        );
+        setStorageData("db_hotels", items);
+        return data;
+      },
 
-                const data = await res.json();
+      delete: async (id) => {
+        const items = getStorageData("db_hotels").filter((i) => i.id !== id);
+        setStorageData("db_hotels", items);
+      },
+    },
 
-                return {
-                    file_url: data.secure_url
-                };
-            }
-        }
-    }
+    Activity: {
+      list: async () => getStorageData("db_activities"),
+
+      create: async (data) => {
+        const items = getStorageData("db_activities");
+        const newItem = { ...data, id: Date.now().toString() };
+        items.push(newItem);
+        setStorageData("db_activities", items);
+        return newItem;
+      },
+
+      update: async (id, data) => {
+        const items = getStorageData("db_activities").map((item) =>
+          item.id === id ? { ...item, ...data } : item,
+        );
+        setStorageData("db_activities", items);
+        return data;
+      },
+
+      delete: async (id) => {
+        const items = getStorageData("db_activities").filter(
+          (i) => i.id !== id,
+        );
+        setStorageData("db_activities", items);
+      },
+    },
+
+    Transportation: {
+      list: async () => getStorageData("db_transport"),
+
+      create: async (data) => {
+        const items = getStorageData("db_transport");
+        const newItem = { ...data, id: Date.now().toString() };
+        items.push(newItem);
+        setStorageData("db_transport", items);
+        return newItem;
+      },
+
+      update: async (id, data) => {
+        const items = getStorageData("db_transport").map((item) =>
+          item.id === id ? { ...item, ...data } : item,
+        );
+        setStorageData("db_transport", items);
+        return data;
+      },
+
+      delete: async (id) => {
+        const items = getStorageData("db_transport").filter((i) => i.id !== id);
+        setStorageData("db_transport", items);
+      },
+    },
+
+    Visa: {
+      list: async () => getStorageData("db_visas"),
+
+      create: async (data) => {
+        const items = getStorageData("db_visas");
+        const newItem = { ...data, id: Date.now().toString() };
+        items.push(newItem);
+        setStorageData("db_visas", items);
+        return newItem;
+      },
+
+      update: async (id, data) => {
+        const items = getStorageData("db_visas").map((item) =>
+          item.id === id ? { ...item, ...data } : item,
+        );
+        setStorageData("db_visas", items);
+        return data;
+      },
+
+      delete: async (id) => {
+        const items = getStorageData("db_visas").filter((i) => i.id !== id);
+        setStorageData("db_visas", items);
+      },
+    },
+  },
+
+  // ================= CLOUDINARY INTEGRATION =================
+  integrations: {
+    Core: {
+      UploadFile: async ({ file }) => {
+        const CLOUD_NAME = "dpqecvo3y";
+        const UPLOAD_PRESET = "Package-making";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", UPLOAD_PRESET);
+
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const data = await res.json();
+
+        return {
+          file_url: data.secure_url,
+        };
+      },
+    },
+  },
 };
