@@ -82,9 +82,13 @@ const services = [
 
 export default function TravelBooking() {
   const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get("id"); // ખાતરી કરો કે અહીં 'id' જ લખ્યું છે
   const cloneId = urlParams.get("cloneId");
-  const urlBranch = urlParams.get("branch");
 
+  console.log("Edit ID from URL:", editId); // આનાથી ખબર પડશે કે ID મળે છે કે નહીં
+  const urlBranch = urlParams.get("branch");
+  console.log("Edit ID from URL:", editId);
+  console.log("Branch from URL:", urlBranch);
   // Check if user is logged in
   const userBranch = localStorage.getItem("userBranch");
   const userName = localStorage.getItem("userName");
@@ -188,15 +192,18 @@ export default function TravelBooking() {
   };
 
   // Fetch data from database
-  const { data: cloneData } = useQuery({
-    queryKey: ["package", cloneId],
-    queryFn: () => base44.entities.TravelPackage.filter({ id: cloneId }),
-    enabled: !!cloneId,
+  const { data: packageData } = useQuery({
+    queryKey: ["package", editId || cloneId],
+    queryFn: () => base44.entities.TravelPackage.get(editId || cloneId),
+    enabled: !!(editId || cloneId),
   });
 
+  // TravelBooking.jsx ની અંદર
   useEffect(() => {
-    if (cloneData && cloneData.length > 0) {
-      const pkg = cloneData[0];
+    if (packageData) {
+      const pkg = packageData;
+
+      // મુખ્ય ફોર્મ ડેટા
       setFormData({
         name: pkg.name || "",
         phone: pkg.phone || "",
@@ -207,17 +214,24 @@ export default function TravelBooking() {
         adults: pkg.adults || 1,
         children: pkg.children || 0,
         services: pkg.services || [],
-        branch: pkg.branch || urlBranch || "Dubai",
-        status: "draft", // Always draft for new clone
+        branch: pkg.branch || userBranch,
+        status: editId ? pkg.status || "draft" : "draft",
       });
+
+      // સિલેક્ટ કરેલી આઈટમ્સ લોડ કરો
       setSelectedHotels(pkg.selected_hotels || []);
       setSelectedActivities(pkg.selected_activities || []);
       setSelectedTransport(pkg.selected_transport || []);
       setSelectedVisas(pkg.selected_visas || []);
       setSelectedSICTransports(pkg.selected_sic_transports || []);
+
+      // બાકીની કિંમતો
       setCurrency(pkg.currency || "AED");
+      setCommission(pkg.commission || 0);
+      setAdditionalAmount(pkg.additional_amount || 0);
+      setIncludeFixedCharges(pkg.fixed_charges > 0);
     }
-  }, [cloneData]);
+  }, [packageData, editId]);
 
   const { data: hotels = [] } = useQuery({
     queryKey: ["hotels"],
@@ -308,21 +322,35 @@ export default function TravelBooking() {
 
   // Save package
   const saveMutation = useMutation({
-    mutationFn: (data) =>
-      cloneId
-        ? base44.entities.TravelPackage.update(cloneId, data)
-        : base44.entities.TravelPackage.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["packages"] });
-      setIsSaving(false);
-      alert("Package saved successfully!");
-      window.location.href = createPageUrl("Dashboard");
-    },
-  });
+  mutationFn: async (data) => {
+    if (editId) {
+      // અગત્યનું: editId વાપરવું
+      return base44.entities.TravelPackage.update(editId, data);
+    } else {
+      return base44.entities.TravelPackage.create(data);
+    }
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["packages"] });
+    setIsSaving(false);
+    alert(editId ? "Changes Saved!" : "Package Created!");
+    window.location.href = createPageUrl("Dashboard");
+  },
+  onError: (error) => {
+    setIsSaving(false);
+    alert("Error: " + error.message);
+  }
+});
 
   const handleSave = () => {
+    if (!formData.name || !formData.phone || !formData.destination) {
+      alert("Please fill all required fields");
+      return;
+    }
+
     setIsSaving(true);
-    saveMutation.mutate({
+
+    const payload = {
       ...formData,
       username: userName,
       selected_hotels: selectedHotels,
@@ -330,17 +358,22 @@ export default function TravelBooking() {
       selected_transport: selectedTransport,
       selected_visas: selectedVisas,
       selected_sic_transports: selectedSICTransports,
+
+      // સરવાળા (Totals)
       hotel_total: calculateHotelTotal(),
       activities_total: calculateActivitiesTotal(),
       transport_total: calculateTransportTotal(),
       visa_total: calculateVisaTotal(),
       sic_transport_total: calculateSICTransportTotal(),
-      commission: commission,
+
+      commission,
       fixed_charges: fixedCharges,
       additional_amount: additionalAmount || 0,
       grand_total: calculateGrandTotal(),
-      currency: currency,
-    });
+      currency,
+    };
+
+    saveMutation.mutate(payload);
   };
 
   // Handlers
@@ -1668,7 +1701,6 @@ export default function TravelBooking() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            
                             side="bottom"
                             align="start"
                             sideOffset={8}
@@ -1738,7 +1770,6 @@ export default function TravelBooking() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            
                             side="bottom"
                             align="start"
                             sideOffset={8}
@@ -2660,7 +2691,7 @@ export default function TravelBooking() {
                       ) : (
                         <Save className="w-4 h-4 mr-2" />
                       )}{" "}
-                      Save Package
+                      {editId ? "Save Changes" : "Save Package"}
                     </Button>
                     <Button
                       onClick={generatePDF}
@@ -2788,7 +2819,6 @@ export default function TravelBooking() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                       
                         side="bottom"
                         align="start"
                         sideOffset={8}
@@ -2834,7 +2864,6 @@ export default function TravelBooking() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                        
                         side="bottom"
                         align="start"
                         sideOffset={8}
@@ -2947,7 +2976,6 @@ export default function TravelBooking() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      
                       side="bottom"
                       align="start"
                       sideOffset={8}
@@ -3174,7 +3202,6 @@ export default function TravelBooking() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                        
                         side="bottom"
                         align="start"
                         sideOffset={8}

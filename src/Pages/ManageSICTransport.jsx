@@ -12,11 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription, // હવે આ કામ કરશે
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, MapPin } from "lucide-react";
 import ImageUpload from "@/components/ui/ImageUpload";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { ADMIN_USERS } from "@/utils/constants";
 
 export default function ManageSICTransport() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,17 +33,27 @@ export default function ManageSICTransport() {
     b2b_adult_price: 0,
     b2b_child_price: 0,
   });
-
   const queryClient = useQueryClient();
+  const userName = localStorage.getItem("userName");
 
-  const { data: sicTransports = [], isLoading } = useQuery({
+  // Admin list configuration
+const isAdmin = ADMIN_USERS.includes(userName);
+
+
+  // Fetch SIC Transport from Supabase
+  const {
+    data: sicTransports = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["sicTransports"],
     queryFn: () => base44.entities.SICTransport.list(),
+    staleTime: 0,
   });
 
   const filteredItems = sicTransports.filter(
     (item) =>
-      item.place_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.place_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
@@ -61,10 +73,25 @@ export default function ManageSICTransport() {
     },
   });
 
+  // Strict Delete with cache cleaning
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.SICTransport.delete(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["sicTransports"] }),
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: ["sicTransports"] });
+      const previousData = queryClient.getQueryData(["sicTransports"]);
+      queryClient.setQueryData(["sicTransports"], (old) =>
+        old ? old.filter((item) => item.id !== deletedId) : [],
+      );
+      return { previousData };
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["sicTransports"] });
+      refetch();
+    },
+    onError: (err, deletedId, context) => {
+      queryClient.setQueryData(["sicTransports"], context.previousData);
+      alert("Error deleting item: " + err.message);
+    },
   });
 
   const resetForm = () => {
@@ -83,7 +110,7 @@ export default function ManageSICTransport() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (editingItem) {
+    if (editingItem && editingItem.id) {
       updateMutation.mutate({ id: editingItem.id, data: formData });
     } else {
       createMutation.mutate(formData);
@@ -102,6 +129,16 @@ export default function ManageSICTransport() {
     });
     setEditingItem(item);
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this SIC Transport permanently?",
+      )
+    ) {
+      deleteMutation.mutate(id);
+    }
   };
 
   return (
@@ -124,132 +161,145 @@ export default function ManageSICTransport() {
             <Link to={createPageUrl("Dashboard")}>
               <Button variant="outline">Back</Button>
             </Link>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-700"
-                  onClick={() => resetForm()}
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Add SIC Transport
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingItem
-                      ? "Edit SIC Transport"
-                      : "Add New SIC Transport"}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label>Place Name</Label>
-                    <Input
-                      value={formData.place_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, place_name: e.target.value })
-                      }
-                      required
-                      placeholder="e.g. Dubai City Tour"
-                    />
-                  </div>
-                  <div>
-                    <Label>Image</Label>
-                    <ImageUpload
-                      value={formData.image}
-                      onChange={(url) =>
-                        setFormData({ ...formData, image: url })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Description</Label>
-                    <Input
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder="Brief description..."
-                    />
-                  </div>
-                  <div>
-                    <Label className="font-bold text-blue-600">B2C Rates</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <Label>Adult Price (AED)</Label>
-                        <Input
-                          type="number"
-                          value={formData.adult_price}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              adult_price: parseFloat(e.target.value),
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label>Child Price (AED)</Label>
-                        <Input
-                          type="number"
-                          value={formData.child_price}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              child_price: parseFloat(e.target.value),
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="font-bold text-green-600">
-                      B2B Rates
-                    </Label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <Label>B2B Adult Price (AED)</Label>
-                        <Input
-                          type="number"
-                          value={formData.b2b_adult_price}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              b2b_adult_price: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>B2B Child Price (AED)</Label>
-                        <Input
-                          type="number"
-                          value={formData.b2b_child_price}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              b2b_child_price: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
+            {isAdmin && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
                   <Button
-                    type="submit"
-                    className="w-full bg-teal-600 hover:bg-teal-700"
+                    className="bg-teal-600 hover:bg-teal-700"
+                    onClick={() => resetForm()}
                   >
-                    {editingItem ? "Update SIC Transport" : "Add SIC Transport"}
+                    <Plus className="w-4 h-4 mr-2" /> Add SIC Transport
                   </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingItem
+                        ? "Edit SIC Transport"
+                        : "Add New SIC Transport"}
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                      Fill in the transport details. All rates are in AED.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label>Place Name</Label>
+                      <Input
+                        value={formData.place_name}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            place_name: e.target.value,
+                          })
+                        }
+                        required
+                        placeholder="e.g. Dubai City Tour"
+                      />
+                    </div>
+                    <div>
+                      <Label>Image</Label>
+                      <ImageUpload
+                        value={formData.image}
+                        onChange={(url) =>
+                          setFormData({ ...formData, image: url })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Input
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="Brief description..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-bold text-blue-600">
+                        B2C Rates
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                          <Label>Adult Price (AED)</Label>
+                          <Input
+                            type="number"
+                            value={formData.adult_price}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                adult_price: parseFloat(e.target.value),
+                              })
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label>Child Price (AED)</Label>
+                          <Input
+                            type="number"
+                            value={formData.child_price}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                child_price: parseFloat(e.target.value),
+                              })
+                            }
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="font-bold text-green-600">
+                        B2B Rates
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                          <Label>B2B Adult (AED)</Label>
+                          <Input
+                            type="number"
+                            value={formData.b2b_adult_price}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                b2b_adult_price: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>B2B Child (AED)</Label>
+                          <Input
+                            type="number"
+                            value={formData.b2b_child_price}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                b2b_child_price: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-teal-600 hover:bg-teal-700"
+                      disabled={
+                        createMutation.isPending || updateMutation.isPending
+                      }
+                    >
+                      {editingItem ? "Update" : "Create"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
 
@@ -257,13 +307,15 @@ export default function ManageSICTransport() {
           <div className="text-center py-12">Loading...</div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {filteredItems.map((item) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative h-48 bg-slate-200">
@@ -278,22 +330,25 @@ export default function ManageSICTransport() {
                           No Image
                         </div>
                       )}
-                      <div className="absolute top-2 right-2 flex gap-2">
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          onClick={() => handleEdit(item)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => deleteMutation.mutate(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {isAdmin && (
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => handleDelete(item.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -301,7 +356,7 @@ export default function ManageSICTransport() {
                         <h3 className="font-bold text-lg">{item.place_name}</h3>
                       </div>
                       <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                        {item.description || "No description"}
+                        {item.description || "No description provided."}
                       </p>
                       <div className="flex justify-between items-center pt-3 border-t">
                         <div className="text-blue-600 font-bold">

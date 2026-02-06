@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,10 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, User } from "lucide-react";
-import { createPageUrl } from "@/utils";
+import {
+  Building2,
+  ShieldCheck,
+  UserCircle,
+  Lock,
+  Eye,
+  EyeOff,
+} from "lucide-react"; // Eye આઈકોન્સ ઉમેર્યા
 
 export default function BranchSelection() {
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false); // પાસવર્ડ દેખાડવા માટેનું સ્ટેટ
   const [formData, setFormData] = useState({
     username: "",
     branch: "",
@@ -22,11 +31,11 @@ export default function BranchSelection() {
   });
 
   const validUsernames = [
-    "RichhaBW",
-    "VikramDD",
-    "PPnikunj",
-    "Asal@11",
-    "Kishan@ST",
+    "Nikunj001",
+    "Richha2011",
+    "Vikram2211",
+    "SK1110",
+    "Manan1120",
   ];
   const [error, setError] = useState("");
 
@@ -38,116 +47,187 @@ export default function BranchSelection() {
       return;
     }
 
-    // Validate username
     if (!validUsernames.includes(formData.username)) {
       setError("Invalid username");
       return;
     }
 
-    // Validate password based on branch
     const passwords = {
-      Dubai: "Burjwing@11",
-      Surat: "Surat@@1110",
-      UP: "Up@5500",
+      Dubai: ["@BurjWings@#0110"],
+      Surat: ["@BurjWings@#0110"],
+      UP: ["@BurjWings@#0110"],
     };
 
-    if (formData.password !== passwords[formData.branch]) {
+    if (
+      !passwords[formData.branch] ||
+      !passwords[formData.branch].includes(formData.password)
+    ) {
       setError("Invalid password for selected branch");
       return;
     }
 
+    localStorage.setItem("burjInvoice_loggedIn", "true");
+    localStorage.setItem("burjInvoice_branch", formData.branch);
+    localStorage.setItem("burjInvoice_email", formData.username);
+    localStorage.setItem("burjInvoice_role", formData.role.toLowerCase());
+
     localStorage.setItem("userBranch", formData.branch);
     localStorage.setItem("userName", formData.username);
     localStorage.setItem("userRole", formData.role);
-    window.location.href = createPageUrl("Dashboard");
+
+    navigate("/Dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center p-6">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center pb-6">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden text-slate-100">
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px]" />
+
+      <Card className="w-full max-w-md border-slate-800 bg-slate-900/50 backdrop-blur-xl shadow-2xl relative z-10">
+        <CardHeader className="text-center pb-8 border-b border-slate-800/50">
+          <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20 rotate-3">
+            <Building2 className="w-10 h-10 text-white" />
           </div>
-          <CardTitle className="text-2xl">Welcome to Travel Booking</CardTitle>
-          <p className="text-slate-600 text-sm">
-            Select your branch to continue
+          <CardTitle className="text-3xl font-bold text-white tracking-tight">
+            Burj Package Booking
+          </CardTitle>
+          <p className="text-slate-400 text-sm mt-2 font-medium">
+            Management Portal Login
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
+
+        <CardContent className="space-y-5 pt-8">
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">Username</Label>
+            <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <UserCircle className="w-4 h-4 text-blue-400" /> Username
+            </Label>
             <Input
               value={formData.username}
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              placeholder="Enter username"
-              className="h-11"
+              placeholder="Enter your username"
+              className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 h-12 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">Select Branch</Label>
-            <Select
-              value={formData.branch}
-              onValueChange={(v) => setFormData({ ...formData, branch: v })}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Choose your branch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Dubai">Burj Wings Tourism LLC</SelectItem>
-                <SelectItem value="Surat">Go Dubai Online - Surat</SelectItem>
-                <SelectItem value="UP">Go Dubai Online - UP</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider">
+                Branch
+              </Label>
+              <Select
+                value={formData.branch}
+                onValueChange={(v) => setFormData({ ...formData, branch: v })}
+              >
+                <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-12 outline-none focus:ring-2 focus:ring-blue-500/50">
+                  <SelectValue placeholder="Branch" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700 text-white z-[100]">
+                  <SelectItem
+                    value="Dubai"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    Burj Wings (Dubai)
+                  </SelectItem>
+                  <SelectItem
+                    value="Surat"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    GDO - Surat
+                  </SelectItem>
+                  <SelectItem
+                    value="UP"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    GDO - UP
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider">
+                Access Role
+              </Label>
+              <Select
+                value={formData.role}
+                onValueChange={(v) => setFormData({ ...formData, role: v })}
+              >
+                <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-12 outline-none focus:ring-2 focus:ring-blue-500/50">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700 text-white z-[100]">
+                  <SelectItem
+                    value="B2C"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    B2C Rate
+                  </SelectItem>
+                  <SelectItem
+                    value="B2B"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    B2B Rate
+                  </SelectItem>
+                  <SelectItem
+                    value="admin"
+                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                  >
+                    Admin
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">Select Role</Label>
-            <Select
-              value={formData.role}
-              onValueChange={(v) => setFormData({ ...formData, role: v })}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Choose your role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="B2C">B2C (Customer Rates)</SelectItem>
-                <SelectItem value="B2B">B2B (Business Rates)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">Password</Label>
-            <Input
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              placeholder="Enter branch password"
-              className="h-11"
-            />
+            <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <Lock className="w-4 h-4 text-blue-400" /> Password
+            </Label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"} // સ્ટેટ મુજબ ટાઇપ બદલાશે
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="••••••••"
+                className="bg-slate-800/50 border-slate-700 text-white h-12 focus:ring-blue-500/20 transition-all placeholder:text-slate-500 pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm font-medium animate-in fade-in slide-in-from-top-1">
               {error}
             </div>
           )}
 
           <Button
             onClick={handleLogin}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98]"
             disabled={
               !formData.username || !formData.branch || !formData.password
             }
           >
-            Continue to Dashboard
+            Sign In to Dashboard
           </Button>
+
+          <div className="flex justify-center items-center gap-2 text-[10px] text-slate-500 uppercase font-bold tracking-widest pt-4">
+            <ShieldCheck className="w-3 h-3" /> Secure Access Only
+          </div>
         </CardContent>
       </Card>
     </div>

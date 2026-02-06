@@ -1,316 +1,384 @@
-// src/api/base44Client.js
+import { createClient } from "@supabase/supabase-js";
 
-// ================= INITIAL DATA =================
-const INITIAL_DATA = {
-    db_hotels: [
-        {
-            id: "h1",
-            name: "Burj Al Arab Jumeirah",
-            image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
-            rating: 5,
-            location: "Jumeirah St, Dubai",
-            price_per_night: 4500,
-            b2b_price_per_night: 4000,
-            extra_bed_price: 500,
-            b2b_extra_bed_price: 400
-        },
-        {
-            id: "h2",
-            name: "Atlantis, The Palm",
-            image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800",
-            rating: 5,
-            location: "Palm Jumeirah, Dubai",
-            price_per_night: 1800,
-            b2b_price_per_night: 1600,
-            extra_bed_price: 300,
-            b2b_extra_bed_price: 250
-        }
-    ],
-db_sic_transport: [
-        {
-            id: "sic1",
-            place_name: "Dubai City Tour",
-            description: "Guided tour of major landmarks.",
-            adult_price: 150,
-            child_price: 100,
-            b2b_adult_price: 120,
-            b2b_child_price: 80
-        }
-    ],
-    db_activities: [
-        {
-            id: "a1",
-            name: "Premium Desert Safari",
-            image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800",
-            description: "Dune bashing, camel riding, and BBQ dinner under the stars.",
-            adult_price: 250,
-            child_price: 150,
-            b2b_adult_price: 200,
-            b2b_child_price: 120
-        },
-        {
-            id: "a2",
-            name: "Burj Khalifa At The Top",
-            image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800",
-            description: "Visit the 124th floor of the world's tallest building.",
-            adult_price: 175,
-            child_price: 135,
-            b2b_adult_price: 160,
-            b2b_child_price: 120
-        }
-    ],
+const SUPABASE_URL = "https://epsmgeiqjuybbmggmkaf.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwc21nZWlxanV5YmJtZ2dta2FmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODM0MDEsImV4cCI6MjA4NTg1OTQwMX0.HKkOPbyL50EF2lPK4UZ-xOTUUWTBv3r1VEGTYyOnwfU";
 
-    db_transport: [
-        {
-            id: "t1",
-            name: "Private Luxury SUV",
-            image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800",
-            description: "Comfortable SUV for city transfers and tours.",
-            price_7_seater: 500,
-            price_14_seater: 800,
-            b2b_price_7_seater: 450,
-            b2b_price_14_seater: 750
-        }
-    ],
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    db_visas: [
-        {
-            id: "v1",
-            country: "UAE 30 Days Tourist Visa",
-            image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800",
-            adult_price: 350,
-            child_price: 350,
-            b2b_adult_price: 310,
-            b2b_child_price: 310
-        },
-        {
-            id: "v2",
-            country: "UAE 60 Days Tourist Visa",
-            image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800",
-            adult_price: 850,
-            child_price: 450,
-            b2b_adult_price: 610,
-            b2b_child_price: 510
-        }
-    ],
-
-    db_packages: [
-        {
-            id: "pkg_01",
-            name: "Demo Traveler",
-            phone: "+91 0000000000",
-            destination: "Dubai, UAE",
-            arrival_date: new Date().toISOString(),
-            departure_date: new Date(Date.now() + 432000000).toISOString(),
-            adults: 2,
-            children: 0,
-            branch: "Dubai",
-            status: "confirmed",
-            currency: "AED",
-            grand_total: 5500,
-            services: ["Hotel", "Visa", "Transportation"],
-            created_date: new Date().toISOString()
-        }
-    ]
+const cleanNumber = (val) => {
+  const num = parseFloat(val);
+  return isNaN(num) ? 0 : num;
 };
 
-// ================= STORAGE HELPERS =================
-const getStorageData = (key) => {
-    const data = localStorage.getItem(key);
-    if (!data) {
-        localStorage.setItem(key, JSON.stringify(INITIAL_DATA[key] || []));
-        return INITIAL_DATA[key] || [];
-    }
-    return JSON.parse(data);
-};
+// Helper for JSON fields
+const ensureArray = (val) => (Array.isArray(val) ? val : []);
 
-const setStorageData = (key, data) => {
-    localStorage.setItem(key, JSON.stringify(data));
-};
-
-// ================= BASE44 CLIENT =================
 export const base44 = {
   entities: {
     SICTransport: {
-      list: async () => getStorageData("db_sic_transport"),
-
-      create: async (data) => {
-        const items = getStorageData("db_sic_transport");
-        const newItem = { ...data, id: Date.now().toString() };
-        items.push(newItem);
-        setStorageData("db_sic_transport", items);
-        return newItem;
-      },
-
-      update: async (id, data) => {
-        const items = getStorageData("db_sic_transport").map((item) =>
-          item.id === id ? { ...item, ...data } : item,
-        );
-        setStorageData("db_sic_transport", items);
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_sic_transport")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
         return data;
       },
-
+      create: async (formData) => {
+        const payload = {
+          place_name: formData.place_name,
+          image: formData.image || "",
+          description: formData.description || "",
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_sic_transport")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      update: async (id, formData) => {
+        const payload = {
+          place_name: formData.place_name,
+          image: formData.image || "",
+          description: formData.description || "",
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_sic_transport")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
       delete: async (id) => {
-        const items = getStorageData("db_sic_transport").filter(
-          (i) => i.id !== id,
-        );
-        setStorageData("db_sic_transport", items);
+        const { error } = await supabase
+          .from("db_sic_transport")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return true;
+      },
+    },
+    Hotel: {
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_hotels")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      create: async (formData) => {
+        const payload = {
+          ...formData,
+          rating: parseInt(formData.rating) || 5,
+          price_per_night: cleanNumber(formData.price_per_night),
+          extra_bed_price: cleanNumber(formData.extra_bed_price),
+          b2b_price_per_night: cleanNumber(formData.b2b_price_per_night),
+          b2b_extra_bed_price: cleanNumber(formData.b2b_extra_bed_price),
+        };
+        const { data, error } = await supabase
+          .from("db_hotels")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      update: async (id, formData) => {
+        const payload = {
+          ...formData,
+          rating: parseInt(formData.rating) || 5,
+          price_per_night: cleanNumber(formData.price_per_night),
+          extra_bed_price: cleanNumber(formData.extra_bed_price),
+          b2b_price_per_night: cleanNumber(formData.b2b_price_per_night),
+          b2b_extra_bed_price: cleanNumber(formData.b2b_extra_bed_price),
+        };
+        const { data, error } = await supabase
+          .from("db_hotels")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      delete: async (id) => {
+        const { error } = await supabase
+          .from("db_hotels")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return true;
+      },
+    },
+    Activity: {
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_activities")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      create: async (formData) => {
+        const payload = {
+          ...formData,
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_activities")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      update: async (id, formData) => {
+        const payload = {
+          ...formData,
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_activities")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      delete: async (id) => {
+        const { error } = await supabase
+          .from("db_activities")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return true;
+      },
+    },
+    Transportation: {
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_transport")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      create: async (formData) => {
+        const payload = {
+          ...formData,
+          price_7_seater: cleanNumber(formData.price_7_seater),
+          price_14_seater: cleanNumber(formData.price_14_seater),
+          price_22_seater: cleanNumber(formData.price_22_seater),
+          price_35_seater: cleanNumber(formData.price_35_seater),
+          price_50_seater: cleanNumber(formData.price_50_seater),
+          b2b_price_7_seater: cleanNumber(formData.b2b_price_7_seater),
+          b2b_price_14_seater: cleanNumber(formData.b2b_price_14_seater),
+          b2b_price_22_seater: cleanNumber(formData.b2b_price_22_seater),
+          b2b_price_35_seater: cleanNumber(formData.b2b_price_35_seater),
+          b2b_price_50_seater: cleanNumber(formData.b2b_price_50_seater),
+        };
+        const { data, error } = await supabase
+          .from("db_transport")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      update: async (id, formData) => {
+        const payload = {
+          ...formData,
+          price_7_seater: cleanNumber(formData.price_7_seater),
+          price_14_seater: cleanNumber(formData.price_14_seater),
+          price_22_seater: cleanNumber(formData.price_22_seater),
+          price_35_seater: cleanNumber(formData.price_35_seater),
+          price_50_seater: cleanNumber(formData.price_50_seater),
+          b2b_price_7_seater: cleanNumber(formData.b2b_price_7_seater),
+          b2b_price_14_seater: cleanNumber(formData.b2b_price_14_seater),
+          b2b_price_22_seater: cleanNumber(formData.b2b_price_22_seater),
+          b2b_price_35_seater: cleanNumber(formData.b2b_price_35_seater),
+          b2b_price_50_seater: cleanNumber(formData.b2b_price_50_seater),
+        };
+        const { data, error } = await supabase
+          .from("db_transport")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      delete: async (id) => {
+        const { error } = await supabase
+          .from("db_transport")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return true;
+      },
+    },
+    Visa: {
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_visas")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      create: async (formData) => {
+        const payload = {
+          ...formData,
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_visas")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      update: async (id, formData) => {
+        const payload = {
+          ...formData,
+          adult_price: cleanNumber(formData.adult_price),
+          child_price: cleanNumber(formData.child_price),
+          b2b_adult_price: cleanNumber(formData.b2b_adult_price),
+          b2b_child_price: cleanNumber(formData.b2b_child_price),
+        };
+        const { data, error } = await supabase
+          .from("db_visas")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+      delete: async (id) => {
+        const { error } = await supabase.from("db_visas").delete().eq("id", id);
+        if (error) throw error;
+        return true;
       },
     },
     TravelPackage: {
-      list: async () =>
-        getStorageData("db_packages").sort(
-          (a, b) => new Date(b.created_date) - new Date(a.created_date),
-        ),
+      list: async () => {
+        const { data, error } = await supabase
+          .from("db_packages")
+          .select("*")
+          .order("created_date", { ascending: false });
+        if (error) throw error;
+        return data;
+      },
 
-      filter: async ({ id }) =>
-        getStorageData("db_packages").filter((p) => p.id === id),
+      get: async (id) => {
+        const { data, error } = await supabase
+          .from("db_packages")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-      create: async (data) => {
-        const items = getStorageData("db_packages");
-        const newItem = {
-          ...data,
-          id: Math.random().toString(36).slice(2, 9),
-          created_date: new Date().toISOString(),
+        if (error) throw error;
+        return data;
+      },
+
+      create: async (formData) => {
+        const payload = {
+          ...formData,
+          hotel_total: cleanNumber(formData.hotel_total),
+          activities_total: cleanNumber(formData.activities_total),
+          transport_total: cleanNumber(formData.transport_total),
+          visa_total: cleanNumber(formData.visa_total),
+          sic_transport_total: cleanNumber(formData.sic_transport_total),
+          commission: cleanNumber(formData.commission),
+          fixed_charges: cleanNumber(formData.fixed_charges),
+          additional_amount: cleanNumber(formData.additional_amount),
+          grand_total: cleanNumber(formData.grand_total),
+          services: ensureArray(formData.services),
+          selected_hotels: ensureArray(formData.selected_hotels),
+          selected_activities: ensureArray(formData.selected_activities),
+          selected_transport: ensureArray(formData.selected_transport),
+          selected_visas: ensureArray(formData.selected_visas),
+          selected_sic_transports: ensureArray(
+            formData.selected_sic_transports,
+          ),
         };
-        items.push(newItem);
-        setStorageData("db_packages", items);
-        return newItem;
+        const { data, error } = await supabase
+          .from("db_packages")
+          .insert([payload])
+          .select();
+        if (error) throw error;
+        return data[0];
+      },
+
+      // 🔥 આ રહ્યું UPDATE ફંક્શન જે બાકી હતું
+      update: async (id, formData) => {
+        const payload = {
+          ...formData,
+          hotel_total: cleanNumber(formData.hotel_total),
+          activities_total: cleanNumber(formData.activities_total),
+          transport_total: cleanNumber(formData.transport_total),
+          visa_total: cleanNumber(formData.visa_total),
+          sic_transport_total: cleanNumber(formData.sic_transport_total),
+          commission: cleanNumber(formData.commission),
+          fixed_charges: cleanNumber(formData.fixed_charges),
+          additional_amount: cleanNumber(formData.additional_amount),
+          grand_total: cleanNumber(formData.grand_total),
+          services: ensureArray(formData.services),
+          selected_hotels: ensureArray(formData.selected_hotels),
+          selected_activities: ensureArray(formData.selected_activities),
+          selected_transport: ensureArray(formData.selected_transport),
+          selected_visas: ensureArray(formData.selected_visas),
+          selected_sic_transports: ensureArray(
+            formData.selected_sic_transports,
+          ),
+        };
+        const { data, error } = await supabase
+          .from("db_packages")
+          .update(payload)
+          .eq("id", id)
+          .select();
+        if (error) throw error;
+        return data[0];
       },
 
       delete: async (id) => {
-        const items = getStorageData("db_packages").filter((p) => p.id !== id);
-        setStorageData("db_packages", items);
-      },
-    },
-
-    Hotel: {
-      list: async () => getStorageData("db_hotels"),
-
-      create: async (data) => {
-        const items = getStorageData("db_hotels");
-        const newItem = { ...data, id: Date.now().toString() };
-        items.push(newItem);
-        setStorageData("db_hotels", items);
-        return newItem;
-      },
-
-      update: async (id, data) => {
-        const items = getStorageData("db_hotels").map((item) =>
-          item.id === id ? { ...item, ...data } : item,
-        );
-        setStorageData("db_hotels", items);
-        return data;
-      },
-
-      delete: async (id) => {
-        const items = getStorageData("db_hotels").filter((i) => i.id !== id);
-        setStorageData("db_hotels", items);
-      },
-    },
-
-    Activity: {
-      list: async () => getStorageData("db_activities"),
-
-      create: async (data) => {
-        const items = getStorageData("db_activities");
-        const newItem = { ...data, id: Date.now().toString() };
-        items.push(newItem);
-        setStorageData("db_activities", items);
-        return newItem;
-      },
-
-      update: async (id, data) => {
-        const items = getStorageData("db_activities").map((item) =>
-          item.id === id ? { ...item, ...data } : item,
-        );
-        setStorageData("db_activities", items);
-        return data;
-      },
-
-      delete: async (id) => {
-        const items = getStorageData("db_activities").filter(
-          (i) => i.id !== id,
-        );
-        setStorageData("db_activities", items);
-      },
-    },
-
-    Transportation: {
-      list: async () => getStorageData("db_transport"),
-
-      create: async (data) => {
-        const items = getStorageData("db_transport");
-        const newItem = { ...data, id: Date.now().toString() };
-        items.push(newItem);
-        setStorageData("db_transport", items);
-        return newItem;
-      },
-
-      update: async (id, data) => {
-        const items = getStorageData("db_transport").map((item) =>
-          item.id === id ? { ...item, ...data } : item,
-        );
-        setStorageData("db_transport", items);
-        return data;
-      },
-
-      delete: async (id) => {
-        const items = getStorageData("db_transport").filter((i) => i.id !== id);
-        setStorageData("db_transport", items);
-      },
-    },
-
-    Visa: {
-      list: async () => getStorageData("db_visas"),
-
-      create: async (data) => {
-        const items = getStorageData("db_visas");
-        const newItem = { ...data, id: Date.now().toString() };
-        items.push(newItem);
-        setStorageData("db_visas", items);
-        return newItem;
-      },
-
-      update: async (id, data) => {
-        const items = getStorageData("db_visas").map((item) =>
-          item.id === id ? { ...item, ...data } : item,
-        );
-        setStorageData("db_visas", items);
-        return data;
-      },
-
-      delete: async (id) => {
-        const items = getStorageData("db_visas").filter((i) => i.id !== id);
-        setStorageData("db_visas", items);
+        const { error } = await supabase
+          .from("db_packages")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return true;
       },
     },
   },
-
-  // ================= CLOUDINARY INTEGRATION =================
   integrations: {
     Core: {
       UploadFile: async ({ file }) => {
-        const CLOUD_NAME = "dpqecvo3y";
-        const UPLOAD_PRESET = "Package-making";
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", UPLOAD_PRESET);
-
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
-
-        const data = await res.json();
-
-        return {
-          file_url: data.secure_url,
-        };
+        const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
+        const { data, error } = await supabase.storage
+          .from("images")
+          .upload(fileName, file);
+        if (error) throw error;
+        const { data: publicUrlData } = supabase.storage
+          .from("images")
+          .getPublicUrl(fileName);
+        return { file_url: publicUrlData.publicUrl };
       },
     },
   },

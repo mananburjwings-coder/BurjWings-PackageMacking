@@ -30,13 +30,16 @@ import {
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
+import { ADMIN_USERS } from "@/utils/constants";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
 
-  // Check if user is logged in
   const userBranch = localStorage.getItem("userBranch");
   const userName = localStorage.getItem("userName");
+
+  // Admin logic with multiple users - "Manan" added as admin
+  const isAdmin = ADMIN_USERS.includes(userName);
 
   React.useEffect(() => {
     if (!userBranch) {
@@ -49,6 +52,7 @@ export default function Dashboard() {
     userBranch || "Dubai",
   );
 
+  // Fetch Packages
   const { data: packages = [], isLoading } = useQuery({
     queryKey: ["packages", userName],
     queryFn: () => base44.entities.TravelPackage.list("-created_date"),
@@ -62,36 +66,14 @@ export default function Dashboard() {
     const matchesBranch = !pkg.branch
       ? selectedBranch === "Dubai"
       : pkg.branch === selectedBranch;
-    const matchesUser = pkg.username === userName;
+
+    // Admin sees all, users see only their own
+    const matchesUser = isAdmin ? true : pkg.username === userName;
     return matchesSearch && matchesBranch && matchesUser;
   });
 
   const formatPackagePrice = (amount, currency = "AED") => {
     if (!amount) return currency === "INR" ? "₹0" : "AED 0";
-    // If stored amount is already converted or if we just want to show the symbol:
-    // Assuming grand_total is stored in the currency unit specified by pkg.currency
-    // OR if grand_total is always base, we convert.
-    // Based on TravelBooking, grand_total is SUM of components.
-    // Components in TravelBooking seem to be calculated based on currency?
-    // In TravelBooking: total = ... * rooms.
-    // The display there uses formatPrice.
-    // But saveMutation saves `calculateGrandTotal()`.
-    // calculateGrandTotal() sums `selectedHotels` totals.
-    // In TravelBooking, `selectedHotels` totals are calculated in `confirmAddHotel`.
-    // `roomPrice * rooms`. `roomPrice` comes from `currentHotel.price_per_night`.
-    // Is `price_per_night` converted? No, it comes from DB.
-    // So `grand_total` is in BASE currency (AED) usually.
-    // So we should convert it if currency is INR?
-    // User said "show in $ change to pakage mad currency".
-    // If `TravelBooking` saves `grand_total` in AED, but sets `currency` to 'INR', we should convert here?
-    // OR does `TravelBooking` save the converted amount?
-    // Let's look at TravelBooking logic again.
-    // `roomPrice = nights * currentHotel.price_per_night`.
-    // `total_price = roomPrice...`.
-    // The DB prices are AED.
-    // So `grand_total` is in AED.
-    // `formatPrice` in TravelBooking converts if INR.
-    // So here we should do the same.
     if (currency === "INR")
       return `₹${(amount * 25.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     return `AED ${amount.toLocaleString()}`;
@@ -112,9 +94,12 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Transportation.list(),
   });
 
+  // Delete Mutation with strict cache clearing
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.TravelPackage.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["packages"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+    },
   });
 
   const stats = [
@@ -134,56 +119,59 @@ export default function Dashboard() {
     { label: "Transport", value: transports.length, icon: Car, color: "green" },
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-yellow-100 text-yellow-800";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">
               Travel Package Dashboard
             </h1>
-            <p className="text-slate-600">
-              Welcome, {userName} • Branch: {selectedBranch}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-slate-600">
+                Welcome, {userName} • Branch: {selectedBranch}
+              </p>
+              {isAdmin ? (
+                <Badge className="bg-red-100 text-red-700 border-red-200">
+                  Admin
+                </Badge>
+              ) : (
+                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                  Viewer
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
-            <Link to={createPageUrl("ManageHotels")}>
-              <Button variant="outline" className="gap-2">
-                <Hotel className="w-4 h-4" /> Hotels
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ManageActivities")}>
-              <Button variant="outline" className="gap-2">
-                <MapPin className="w-4 h-4" /> Activities
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ManageTransport")}>
-              <Button variant="outline" className="gap-2">
-                <Car className="w-4 h-4" /> Transport
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ManageVisas")}>
-              <Button variant="outline" className="gap-2">
-                <FileText className="w-4 h-4" /> Visas
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ManageSICTransport")}>
-              <Button variant="outline" className="gap-2">
-                <MapPin className="w-4 h-4" /> SIC Transport
-              </Button>
-            </Link>
+            {isAdmin && (
+              <>
+                <Link to={createPageUrl("ManageHotels")}>
+                  <Button variant="outline" className="gap-2">
+                    <Hotel className="w-4 h-4" /> Hotels
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("ManageActivities")}>
+                  <Button variant="outline" className="gap-2">
+                    <MapPin className="w-4 h-4" /> Activities
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("ManageTransport")}>
+                  <Button variant="outline" className="gap-2">
+                    <Car className="w-4 h-4" /> Transport
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("ManageVisas")}>
+                  <Button variant="outline" className="gap-2">
+                    <FileText className="w-4 h-4" /> Visas
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("ManageSICTransport")}>
+                  <Button variant="outline" className="gap-2">
+                    <MapPin className="w-4 h-4" /> SIC Transport
+                  </Button>
+                </Link>
+              </>
+            )}
             <Link
               to={`${createPageUrl("TravelBooking")}?branch=${selectedBranch}`}
             >
@@ -204,7 +192,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {stats.map((stat, index) => (
             <motion.div
@@ -232,12 +219,10 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Packages List */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Recent Packages
+              <Package className="w-5 h-5" /> Recent Packages
             </CardTitle>
             <div className="relative w-64">
               <Input
@@ -256,11 +241,6 @@ export default function Dashboard() {
               <div className="text-center py-12 text-slate-500">
                 <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>No packages found.</p>
-                {packages.length === 0 && (
-                  <Link to={createPageUrl("TravelBooking")}>
-                    <Button className="mt-4">Create Package</Button>
-                  </Link>
-                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -273,12 +253,12 @@ export default function Dashboard() {
                     className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-4"
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-lg text-slate-900">
-                          {pkg.name}
-                        </h3>
-                        {/* Status badge removed as requested */}
-                      </div>
+                      <h3 className="font-bold text-lg text-slate-900">
+                        {pkg.name}
+                        <span className="text-xs font-normal text-slate-400 ml-2">
+                          By: {pkg.username}
+                        </span>
+                      </h3>
                       <div className="flex flex-wrap gap-4 text-sm text-slate-600">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
@@ -286,7 +266,7 @@ export default function Dashboard() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {pkg.adults || 0} Adults, {pkg.children || 0} Children
+                          {pkg.adults || 0} A, {pkg.children || 0} C
                         </span>
                         {pkg.arrival_date && (
                           <span className="flex items-center gap-1">
@@ -301,22 +281,39 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-2">
                       <Link
-                        to={
-                          createPageUrl("TravelBooking") + "?cloneId=" + pkg.id
-                        }
+                        to={`${createPageUrl("TravelBooking")}?id=${pkg.id}`}
                       >
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <Package className="w-4 h-4" /> Clone
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-blue-600 border-blue-200"
+                        >
+                          <Edit className="w-4 h-4 mr-1" /> Edit
                         </Button>
                       </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => deleteMutation.mutate(pkg.id)}
+                      <Link
+                        to={`${createPageUrl("TravelBooking")}?cloneId=${pkg.id}`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-purple-600 border-purple-200"
+                        >
+                          <Package className="w-4 h-4 mr-1" /> Clone
+                        </Button>
+                      </Link>
+                      {isAdmin && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm("Are you sure?"))
+                              deleteMutation.mutate(pkg.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </motion.div>
                 ))}
