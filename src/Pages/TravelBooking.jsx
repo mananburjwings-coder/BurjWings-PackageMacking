@@ -322,59 +322,59 @@ export default function TravelBooking() {
 
   // Save package
   const saveMutation = useMutation({
-  mutationFn: async (data) => {
-    if (editId) {
-      // અગત્યનું: editId વાપરવું
-      return base44.entities.TravelPackage.update(editId, data);
-    } else {
-      return base44.entities.TravelPackage.create(data);
-    }
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["packages"] });
-    setIsSaving(false);
-    alert(editId ? "Changes Saved!" : "Package Created!");
-    window.location.href = createPageUrl("Dashboard");
-  },
-  onError: (error) => {
-    setIsSaving(false);
-    alert("Error: " + error.message);
-  }
-});
+    mutationFn: async (data) => {
+      if (editId) {
+        // અગત્યનું: editId વાપરવું
+        return base44.entities.TravelPackage.update(editId, data);
+      } else {
+        return base44.entities.TravelPackage.create(data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      setIsSaving(false);
+      alert(editId ? "Changes Saved!" : "Package Created!");
+      window.location.href = createPageUrl("Dashboard");
+    },
+    onError: (error) => {
+      setIsSaving(false);
+      alert("Error: " + error.message);
+    },
+  });
 
-  const handleSave = () => {
-    if (!formData.name || !formData.phone || !formData.destination) {
-      alert("Please fill all required fields");
-      return;
-    }
+ const handleSave = () => {
+   if (!formData.name || !formData.phone || !formData.destination) {
+     alert("Please fill all required fields");
+     return;
+   }
 
-    setIsSaving(true);
+   setIsSaving(true);
 
-    const payload = {
-      ...formData,
-      username: userName,
-      selected_hotels: selectedHotels,
-      selected_activities: selectedActivities,
-      selected_transport: selectedTransport,
-      selected_visas: selectedVisas,
-      selected_sic_transports: selectedSICTransports,
+   const payload = {
+     ...formData,
+     username: userName,
+     selected_hotels: selectedHotels,
+     selected_activities: selectedActivities,
+     selected_transport: selectedTransport,
+     selected_visas: selectedVisas,
+     selected_sic_transports: selectedSICTransports, // 👈 આ પહેલેથી છે
 
-      // સરવાળા (Totals)
-      hotel_total: calculateHotelTotal(),
-      activities_total: calculateActivitiesTotal(),
-      transport_total: calculateTransportTotal(),
-      visa_total: calculateVisaTotal(),
-      sic_transport_total: calculateSICTransportTotal(),
+     // સરવાળા (Totals)
+     hotel_total: calculateHotelTotal(),
+     activities_total: calculateActivitiesTotal(),
+     transport_total: calculateTransportTotal(),
+     visa_total: calculateVisaTotal(),
+     sic_transport_total: calculateSICTransportTotal(), // 👈 આ લાઇન ખાસ ઉમેરવી
 
-      commission,
-      fixed_charges: fixedCharges,
-      additional_amount: additionalAmount || 0,
-      grand_total: calculateGrandTotal(),
-      currency,
-    };
+     commission,
+     fixed_charges: fixedCharges,
+     additional_amount: additionalAmount || 0,
+     grand_total: calculateGrandTotal(),
+     currency,
+   };
 
-    saveMutation.mutate(payload);
-  };
+   saveMutation.mutate(payload);
+ };
 
   // Handlers
   const handleAddHotel = (hotel) => {
@@ -531,39 +531,102 @@ export default function TravelBooking() {
   };
 
   // PDF Generation
-  const loadImage = (src) =>
-    new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => {
-        console.warn("Image load failed, trying without CORS:", src);
-        const imgNoCors = new Image();
-        imgNoCors.onload = () => resolve(imgNoCors);
-        imgNoCors.onerror = reject;
-        imgNoCors.src = src;
-      };
-      img.src = src;
-    });
+ const loadImageBase64 = async (url) => {
+   if (!url) throw new Error("No URL");
+
+   const res = await fetch(url, { mode: "cors" });
+
+   if (!res.ok) throw new Error("Fetch failed");
+
+   const blob = await res.blob();
+
+   const mime = blob.type.toLowerCase();
+
+   let format = "JPEG";
+
+   if (mime.includes("png")) format = "PNG";
+   else if (mime.includes("webp")) format = "WEBP";
+   else if (mime.includes("jpg") || mime.includes("jpeg")) format = "JPEG";
+
+   return new Promise((resolve, reject) => {
+     const reader = new FileReader();
+
+     reader.onloadend = () => {
+       if (!reader.result) reject("Base64 failed");
+
+       resolve({
+         data: reader.result,
+         format,
+       });
+     };
+
+     reader.onerror = reject;
+
+     reader.readAsDataURL(blob);
+   });
+ };
+
+
 
   const generatePDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      const jsPDF = (await import("jspdf")).jsPDF;
+      const { jsPDF } = await import("jspdf");
       const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = 210,
-        pageHeight = 297,
-        margin = 15;
+
+      // Page size FIRST
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
       const contentWidth = pageWidth - margin * 2;
       let yPosition = 0;
 
-      const checkAddPage = (space) => {
+      // Auto Page Break Helper (FIX FOR ERROR)
+      const checkAddPage = (space = 0) => {
         if (yPosition + space > pageHeight - margin) {
           pdf.addPage();
+
+          // Add watermark on every new page (except cover)
+          if (pdf.getNumberOfPages() > 1) {
+            addWatermark();
+          }
+
           yPosition = margin;
           return true;
         }
         return false;
+      };
+
+      // Watermark
+      const watermarkUrl =
+        "https://epsmgeiqjuybbmggmkaf.supabase.co/storage/v1/object/public/images/1770362287709-img.jpg";
+
+      let watermarkImg = null;
+
+      try {
+        watermarkImg = await loadImageBase64(watermarkUrl);
+      } catch {
+        console.warn("Watermark disabled");
+      }
+
+      const watermarkState = new pdf.GState({ opacity: 0.25 });
+
+      const addWatermark = () => {
+        if (!watermarkImg) return;
+
+        pdf.saveGraphicsState();
+        pdf.setGState(watermarkState);
+
+        pdf.addImage(
+          watermarkImg.data,
+          watermarkImg.format,
+          0,
+          0,
+          pageWidth,
+          pageHeight,
+        );
+
+        pdf.restoreGraphicsState();
       };
 
       // Branch Settings
@@ -602,13 +665,20 @@ export default function TravelBooking() {
 
       // Logo card
       try {
-        const logoImg = await loadImage(logoUrl);
+        const logoImg = await loadImageBase64(logoUrl);
         pdf.setFillColor(255, 255, 255);
         pdf.roundedRect((pageWidth - 70) / 2, 52, 70, 50, 4, 4, "F");
         pdf.setDrawColor(229, 231, 235);
         pdf.setLineWidth(1);
         pdf.roundedRect((pageWidth - 70) / 2, 52, 70, 50, 4, 4, "S");
-        pdf.addImage(logoImg, "PNG", (pageWidth - 60) / 2, 58, 60, 38);
+        pdf.addImage(
+          logoImg.data,
+          logoImg.format,
+          (pageWidth - 60) / 2,
+          58,
+          60,
+          38,
+        );
       } catch (e) {
         console.error("Logo load failed", e);
       }
@@ -675,18 +745,57 @@ export default function TravelBooking() {
 
       // Destination
       // Destination
+      // Destination (With Box - Exact same as Prepared For)
       if (formData.destination) {
-        pdf.setTextColor(0, 0, 0); // BLACK
-        pdf.setFontSize(12);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("DESTINATION", pageWidth / 2, 205, { align: "center" });
+        const destBoxY = 200; // Position adjust કરી શકાય
+        const boxHeight = 22;
+        const radius = 5;
 
-        pdf.setTextColor(0, 0, 0); // BLACK
-        pdf.setFontSize(18);
+        // White Box for Destination
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(
+          margin + 25,
+          destBoxY,
+          contentWidth - 50,
+          boxHeight,
+          radius,
+          radius,
+          "F",
+        );
+
+        // Border for Destination
+        pdf.setDrawColor(203, 213, 225);
+        pdf.setLineWidth(1);
+        pdf.roundedRect(
+          margin + 25,
+          destBoxY,
+          contentWidth - 50,
+          boxHeight,
+          radius,
+          radius,
+          "S",
+        );
+
+        // Label: DESTINATION
+        pdf.setTextColor(100, 116, 139);
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
-        pdf.text(formData.destination.toUpperCase(), pageWidth / 2, 217, {
+        pdf.text("DESTINATION", pageWidth / 2, destBoxY + 8, {
           align: "center",
         });
+
+        // Value: DUBAI, UAE etc.
+        pdf.setTextColor(30, 58, 138);
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(
+          formData.destination.toUpperCase(),
+          pageWidth / 2,
+          destBoxY + 17,
+          {
+            align: "center",
+          },
+        );
       }
 
       // Price per person (bottom fixed)
@@ -711,6 +820,7 @@ export default function TravelBooking() {
 
       // Trip Overview - Professional layout
       pdf.addPage();
+      addWatermark(); // 👈 background starts from here
       yPosition = margin;
 
       // Professional header
@@ -894,10 +1004,41 @@ export default function TravelBooking() {
         });
         yPosition += height + 10;
       }
+      // SIC Transport Section (PDF માં બતાવવા માટે)
+      if (selectedSICTransports.length > 0) {
+        const height = 28 + selectedSICTransports.length * 9;
+        checkAddPage(height);
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(margin, yPosition, contentWidth, height, 6, 6, "F");
+        pdf.setDrawColor(203, 213, 225);
+        pdf.setLineWidth(1);
+        pdf.roundedRect(margin, yPosition, contentWidth, height, 6, 6, "S");
+
+        pdf.setFillColor(204, 251, 241); // Teal color
+        pdf.roundedRect(margin, yPosition, contentWidth, 16, 6, 6, "F");
+
+        pdf.setTextColor(13, 148, 136);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("SIC TRANSPORTATION", margin + 10, yPosition + 11);
+
+        selectedSICTransports.forEach((sic, idx) => {
+          const yPos = yPosition + 28 + idx * 9;
+          pdf.setFillColor(13, 148, 136);
+          pdf.circle(margin + 12, yPos - 2, 1.5, "F");
+          pdf.setTextColor(71, 85, 105);
+          pdf.setFontSize(10);
+          pdf.setFont("helvetica", "normal");
+          pdf.text(sic.place_name, margin + 16, yPos);
+        });
+        yPosition += height + 10;
+      }
 
       // Hotels Section - Professional
       if (selectedHotels.length > 0) {
         pdf.addPage();
+        addWatermark(); // 👈 background starts from here
         yPosition = margin;
 
         // Professional header
@@ -928,11 +1069,18 @@ export default function TravelBooking() {
           pdf.roundedRect(margin, yPosition, contentWidth, 55, 6, 6, "S");
 
           try {
-            const img = await loadImage(hotel.image);
+            const img = await loadImageBase64(hotel.image);
             pdf.setDrawColor(203, 213, 225);
             pdf.setLineWidth(0.5);
             pdf.roundedRect(margin + 5, yPosition + 5, 60, 45, 4, 4, "S");
-            pdf.addImage(img, "JPEG", margin + 5, yPosition + 5, 60, 45);
+            pdf.addImage(
+              img.data,
+              img.format,
+              margin + 5,
+              yPosition + 5,
+              60,
+              45,
+            );
           } catch (e) {
             pdf.setFillColor(248, 250, 252);
             pdf.roundedRect(margin + 5, yPosition + 5, 60, 45, 4, 4, "F");
@@ -1023,6 +1171,7 @@ export default function TravelBooking() {
       // Activities Section - Professional
       if (selectedActivities.length > 0) {
         pdf.addPage();
+        addWatermark(); // 👈 background starts from here
         yPosition = margin;
 
         // Group activities by date
@@ -1141,11 +1290,11 @@ export default function TravelBooking() {
 
             // Image with professional border
             try {
-              const img = await loadImage(activity.image);
+              const img = await loadImageBase64(activity.image);
               pdf.setDrawColor(203, 213, 225);
               pdf.setLineWidth(0.5);
               pdf.roundedRect(imgX, yPosition + 5, 45, 35, 4, 4, "S");
-              pdf.addImage(img, "JPEG", imgX, yPosition + 5, 45, 35);
+              pdf.addImage(img.data, img.format, imgX, yPosition + 5, 45, 35);
             } catch (e) {
               pdf.setFillColor(248, 250, 252);
               pdf.roundedRect(imgX, yPosition + 5, 45, 35, 4, 4, "F");
@@ -1162,6 +1311,7 @@ export default function TravelBooking() {
 
       // Terms & Conditions - Professional
       pdf.addPage();
+      addWatermark(); // 👈 background starts from here
       yPosition = margin;
 
       // Professional header
